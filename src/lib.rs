@@ -5,6 +5,7 @@ mod linux;
 #[cfg(target_os = "linux")]
 use linux::RawGamepad;
 
+/// A type that behaves like a gamepad, without the need for a physical device.
 pub struct VirtualGamepad {
     raw: RawGamepad,
     ty: GamepadType,
@@ -37,74 +38,74 @@ impl VirtualGamepad {
 pub enum GamepadButton {
     /// Xbox360: Y
     /// DualShock4: Triangle
-    North,
+    North = 0,
 
     /// Xbox360: A
     /// DualShock4: X
-    South,
+    South = 1,
 
     /// Xbox360: B
     /// DualShock4: Circle
-    East,
+    East = 2,
 
     /// Xbox360: X
     /// DualShock4: Square
-    West,
+    West = 3,
 
     /// Directional Pad Up
-    DPadUp,
+    DPadUp = 4,
 
     /// Directional Pad Down
-    DPadDown,
+    DPadDown = 5,
 
     /// Directional Pad Left
-    DPadLeft,
+    DPadLeft = 6,
 
     /// Directional Pad Right
-    DPadRight,
+    DPadRight = 7,
 
     /// Left stick click
-    LeftThumb,
+    LeftThumb = 8,
 
     /// Right stick click
-    RightThumb,
+    RightThumb = 9,
 
     /// Menu button on the right
     /// Nintendo Switch: Plus
-    Start,
+    Start = 10,
 
     /// Menu button on the left.
     /// Nintendo Switch: Minus
-    Select,
+    Select = 11,
 
     /// Branded button, such as the big X in the middle of the Xbox360 Controller.
-    Mode,
+    Mode = 12,
 
     /// Right bumper, not analog.
-    RightBumper,
+    RightBumper = 13,
 
     /// Left bumper, not analog.
-    LeftBumper,
+    LeftBumper = 14,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Joystick {
     /// Left joystick, usually used for movement
-    Left,
+    Left = 0,
 
     /// Right joystick, usually used for camera rotation.
-    Right,
+    Right = 1,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Trigger {
     /// Left Analog Trigger
-    Left,
+    Left = 0,
 
     /// Right Analog Trigger
-    Right,
+    Right = 1,
 }
 
 /// A change to the state of a button, trigger, or joystick on a gamepad.
@@ -148,8 +149,8 @@ pub enum GamepadUpdate {
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum GamepadType {
-    Xbox360,
-    DualShock4,
+    Xbox360 = 0,
+    DualShock4 = 1,
 }
 
 impl GamepadType {
