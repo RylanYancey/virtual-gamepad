@@ -150,6 +150,7 @@ impl RawGamepad {
             // Analog triggers
             let triggerbits = &[ANALOG_TRIGGER_LEFT, ANALOG_TRIGGER_RIGHT];
             for triggerbit in triggerbits {
+                ui_set_absbit(fd, *triggerbit)?;
                 let abs_setup = libc::uinput_abs_setup {
                     code: *triggerbit as u16,
                     absinfo: libc::input_absinfo {
