@@ -226,7 +226,7 @@ impl RawGamepad {
             Trigger::Right => BTN_TRIGGER_RIGHT2,
         };
 
-        self.emit(EV_ABS, code, crate::dequantize(value))
+        self.emit(EV_ABS, code, crate::quantize(value))
     }
 
     pub fn update_joystick(&mut self, stick: Joystick, x: f32, y: f32) {
@@ -238,13 +238,13 @@ impl RawGamepad {
             &mut self.file,
             EV_ABS as u16,
             x_code as u16,
-            crate::dequantize(x),
+            crate::quantize(x),
         );
         emit(
             &mut self.file,
             EV_ABS as u16,
             y_code as u16,
-            crate::dequantize(y),
+            crate::quantize(y),
         );
         emit(&mut self.file, EV_SYN as u16, 0, 0);
     }

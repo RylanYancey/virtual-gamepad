@@ -181,6 +181,10 @@ pub struct GamepadInfo {
     pub product_id: u16,
 }
 
-fn dequantize(v: f32) -> i32 {
+pub fn quantize(v: f32) -> i32 {
     (v * 32767.0) as i32
+}
+
+pub fn dequantize(v: i32) -> f32 {
+    v as f32 / 32767.0
 }
