@@ -35,6 +35,7 @@ impl VirtualGamepad {
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadButton {
     /// Xbox360: Y
     /// DualShock4: Triangle
@@ -88,8 +89,32 @@ pub enum GamepadButton {
     LeftBumper = 14,
 }
 
+impl GamepadButton {
+    pub fn from_u8(v: u8) -> Option<Self> {
+        Some(match v {
+            0 => Self::North,
+            1 => Self::South,
+            2 => Self::East,
+            3 => Self::West,
+            4 => Self::DPadUp,
+            5 => Self::DPadDown,
+            6 => Self::DPadLeft,
+            7 => Self::DPadRight,
+            8 => Self::LeftThumb,
+            9 => Self::RightThumb,
+            10 => Self::Start,
+            11 => Self::Select,
+            12 => Self::Mode,
+            13 => Self::RightBumper,
+            14 => Self::LeftBumper,
+            _ => return None,
+        })
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Joystick {
     /// Left joystick, usually used for movement
     Left = 0,
@@ -100,6 +125,7 @@ pub enum Joystick {
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Trigger {
     /// Left Analog Trigger
     Left = 0,
@@ -111,6 +137,7 @@ pub enum Trigger {
 /// A change to the state of a button, trigger, or joystick on a gamepad.
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadUpdate {
     /// Buttons are simple, they are either on or off.
     Button {
@@ -148,6 +175,7 @@ pub enum GamepadUpdate {
 /// the device.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadType {
     Xbox360 = 0,
     DualShock4 = 1,
@@ -176,15 +204,18 @@ impl GamepadType {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct GamepadInfo {
     pub vendor_id: u16,
     pub product_id: u16,
 }
 
+/// Convert an f32 in the range [-1.0,1.0] to an i32 in the range [-32767,32768]
 pub fn quantize(v: f32) -> i32 {
     (v * 32767.0) as i32
 }
 
+/// Convert an i32 in the range [-32767,32768] to an f32 in the range [-1.0,1.0]
 pub fn dequantize(v: i32) -> f32 {
     v as f32 / 32767.0
 }
