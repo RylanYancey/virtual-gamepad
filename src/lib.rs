@@ -34,7 +34,15 @@ impl VirtualGamepad {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(
+        serde::Serialize,
+        serde::Deserialize,
+        tag = "type",
+        rename_all = "snake_case"
+    )
+)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadButton {
     /// Xbox360: Y
@@ -113,7 +121,15 @@ impl GamepadButton {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(
+        serde::Serialize,
+        serde::Deserialize,
+        tag = "type",
+        rename_all = "snake_case"
+    )
+)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Joystick {
     /// Left joystick, usually used for movement
@@ -124,7 +140,15 @@ pub enum Joystick {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(
+        serde::Serialize,
+        serde::Deserialize,
+        tag = "type",
+        rename_all = "snake_case"
+    )
+)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Trigger {
     /// Left Analog Trigger
@@ -136,7 +160,15 @@ pub enum Trigger {
 
 /// A change to the state of a button, trigger, or joystick on a gamepad.
 #[derive(Copy, Clone, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(
+        serde::Serialize,
+        serde::Deserialize,
+        tag = "type",
+        rename_all = "snake_case"
+    )
+)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadUpdate {
     /// Buttons are simple, they are either on or off.
@@ -174,7 +206,15 @@ pub enum GamepadUpdate {
 /// If we didn't specify this correctly, most games wouldn't detect
 /// the device.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(
+        serde::Serialize,
+        serde::Deserialize,
+        tag = "type",
+        rename_all = "snake_case"
+    )
+)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum GamepadType {
     Xbox360 = 0,
@@ -203,7 +243,7 @@ impl GamepadType {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize,))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct GamepadInfo {
     pub vendor_id: u16,
