@@ -137,7 +137,6 @@ pub enum Trigger {
 /// A change to the state of a button, trigger, or joystick on a gamepad.
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum GamepadUpdate {
     /// Buttons are simple, they are either on or off.
     Button {
