@@ -71,8 +71,6 @@ const BTN_THUMBL: ParamType = 0x13d;
 const BTN_THUMBR: ParamType = 0x13e;
 const BTN_TRIGGER_LEFT: ParamType = 0x136; // bumper left
 const BTN_TRIGGER_RIGHT: ParamType = 0x137; // bumper right
-const BTN_TRIGGER_LEFT2: ParamType = 0x138; // maybe analog
-const BTN_TRIGGER_RIGHT2: ParamType = 0x139; // maybe analog
 
 // Numbers that identify absolute axes inputs in linux.
 // From: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
@@ -118,8 +116,6 @@ impl RawGamepad {
                 BTN_THUMBR,
                 BTN_TRIGGER_LEFT,
                 BTN_TRIGGER_RIGHT,
-                BTN_TRIGGER_LEFT2,
-                BTN_TRIGGER_RIGHT2,
             ];
 
             for keybit in keybits {
@@ -216,8 +212,8 @@ impl RawGamepad {
             }
             _ if button.is_trigger() => {
                 let code = match button {
-                    GamepadButton::LeftTrigger => BTN_TRIGGER_LEFT2,
-                    GamepadButton::RightTrigger => BTN_TRIGGER_RIGHT2,
+                    GamepadButton::LeftTrigger => ANALOG_TRIGGER_LEFT,
+                    GamepadButton::RightTrigger => ANALOG_TRIGGER_RIGHT,
                     _ => unreachable!(),
                 };
 
@@ -251,7 +247,7 @@ impl RawGamepad {
                     &mut self.file,
                     EV_KEY as u16,
                     code as u16,
-                    (values[0] < 0.5) as i32,
+                    (values[0] > 0.5) as i32,
                 );
             }
         };
