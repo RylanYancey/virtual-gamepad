@@ -7,7 +7,7 @@ use std::mem::zeroed;
 use std::os::fd::AsRawFd;
 use std::time::Duration;
 
-use crate::{GamepadButton, Joystick, Trigger};
+use crate::GamepadButton;
 
 const UINPUT_PATH: &str = "/dev/uinput";
 
@@ -193,59 +193,68 @@ impl RawGamepad {
         Ok(Self { file })
     }
 
-    fn emit(&mut self, _ty: u64, code: u64, value: i32) {
-        emit(&mut self.file, _ty as u16, code as u16, value as i32);
-        emit(&mut self.file, EV_SYN as u16, 0, 0);
-    }
+    pub fn update(&mut self, button: GamepadButton, values: [f32; 2]) {
+        match button {
+            _ if button.is_joystick() => {
+                let (x_code, y_code) = match button {
+                    GamepadButton::LeftStick => (LEFT_STICK_X, LEFT_STICK_Y),
+                    GamepadButton::RightStick => (RIGHT_STICK_X, RIGHT_STICK_Y),
+                    _ => unreachable!(),
+                };
+                emit(
+                    &mut self.file,
+                    EV_ABS as u16,
+                    x_code as u16,
+                    crate::quantize(values[0]),
+                );
+                emit(
+                    &mut self.file,
+                    EV_ABS as u16,
+                    y_code as u16,
+                    crate::quantize(values[1]),
+                );
+            }
+            _ if button.is_trigger() => {
+                let code = match button {
+                    GamepadButton::LeftTrigger => BTN_TRIGGER_LEFT2,
+                    GamepadButton::RightTrigger => BTN_TRIGGER_RIGHT2,
+                    _ => unreachable!(),
+                };
 
-    pub fn update_button(&mut self, button: GamepadButton, value: bool) {
-        let code = match button {
-            GamepadButton::South => BTN_SOUTH,
-            GamepadButton::North => BTN_NORTH,
-            GamepadButton::East => BTN_EAST,
-            GamepadButton::West => BTN_WEST,
-            GamepadButton::DPadUp => BTN_DPAD_UP,
-            GamepadButton::DPadDown => BTN_DPAD_DOWN,
-            GamepadButton::DPadLeft => BTN_DPAD_LEFT,
-            GamepadButton::DPadRight => BTN_DPAD_RIGHT,
-            GamepadButton::LeftBumper => BTN_TRIGGER_LEFT,
-            GamepadButton::RightBumper => BTN_TRIGGER_RIGHT,
-            GamepadButton::LeftThumb => BTN_THUMBL,
-            GamepadButton::RightThumb => BTN_THUMBR,
-            GamepadButton::Start => BTN_START,
-            GamepadButton::Select => BTN_SELECT,
-            GamepadButton::Mode => BTN_MODE,
+                emit(
+                    &mut self.file,
+                    EV_ABS as u16,
+                    code as u16,
+                    crate::quantize(values[0]),
+                );
+            }
+            _ => {
+                let code = match button {
+                    GamepadButton::South => BTN_SOUTH,
+                    GamepadButton::North => BTN_NORTH,
+                    GamepadButton::East => BTN_EAST,
+                    GamepadButton::West => BTN_WEST,
+                    GamepadButton::DPadUp => BTN_DPAD_UP,
+                    GamepadButton::DPadDown => BTN_DPAD_DOWN,
+                    GamepadButton::DPadLeft => BTN_DPAD_LEFT,
+                    GamepadButton::DPadRight => BTN_DPAD_RIGHT,
+                    GamepadButton::LeftBumper => BTN_TRIGGER_LEFT,
+                    GamepadButton::RightBumper => BTN_TRIGGER_RIGHT,
+                    GamepadButton::LeftThumb => BTN_THUMBL,
+                    GamepadButton::RightThumb => BTN_THUMBR,
+                    GamepadButton::Start => BTN_START,
+                    GamepadButton::Select => BTN_SELECT,
+                    GamepadButton::Mode => BTN_MODE,
+                    _ => unreachable!(),
+                };
+                emit(
+                    &mut self.file,
+                    EV_KEY as u16,
+                    code as u16,
+                    (values[0] < 0.5) as i32,
+                );
+            }
         };
-
-        self.emit(EV_KEY, code, value as i32);
-    }
-
-    pub fn update_trigger(&mut self, trigger: Trigger, value: f32) {
-        let code = match trigger {
-            Trigger::Left => BTN_TRIGGER_LEFT2,
-            Trigger::Right => BTN_TRIGGER_RIGHT2,
-        };
-
-        self.emit(EV_ABS, code, crate::quantize(value))
-    }
-
-    pub fn update_joystick(&mut self, stick: Joystick, x: f32, y: f32) {
-        let (x_code, y_code) = match stick {
-            Joystick::Left => (LEFT_STICK_X, LEFT_STICK_Y),
-            Joystick::Right => (RIGHT_STICK_X, RIGHT_STICK_Y),
-        };
-        emit(
-            &mut self.file,
-            EV_ABS as u16,
-            x_code as u16,
-            crate::quantize(x),
-        );
-        emit(
-            &mut self.file,
-            EV_ABS as u16,
-            y_code as u16,
-            crate::quantize(y),
-        );
         emit(&mut self.file, EV_SYN as u16, 0, 0);
     }
 }

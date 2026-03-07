@@ -25,17 +25,12 @@ impl VirtualGamepad {
     }
 
     pub fn update(&mut self, update: GamepadUpdate) {
-        match update {
-            GamepadUpdate::Button { button, pressed } => self.raw.update_button(button, pressed),
-            GamepadUpdate::Trigger { trigger, value } => self.raw.update_trigger(trigger, value),
-            GamepadUpdate::Joystick { joystick, x, y } => self.raw.update_joystick(joystick, x, y),
-        }
+        self.raw.update(update.button, update.values);
     }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum GamepadButton {
     /// Xbox360: Y
     /// DualShock4: Triangle
@@ -87,10 +82,22 @@ pub enum GamepadButton {
 
     /// Left bumper, not analog.
     LeftBumper = 14,
+
+    /// Left Joystick X/Y
+    LeftStick = 15,
+
+    /// Right Joystick X/Y
+    RightStick = 16,
+
+    /// Left analog trigger.
+    LeftTrigger = 17,
+
+    /// Right analog trigger.
+    RightTrigger = 18,
 }
 
 impl GamepadButton {
-    pub fn from_u8(v: u8) -> Option<Self> {
+    pub const fn from_u8(v: u8) -> Option<Self> {
         Some(match v {
             0 => Self::North,
             1 => Self::South,
@@ -107,66 +114,29 @@ impl GamepadButton {
             12 => Self::Mode,
             13 => Self::RightBumper,
             14 => Self::LeftBumper,
+            15 => Self::LeftStick,
+            16 => Self::RightStick,
+            17 => Self::LeftTrigger,
+            18 => Self::RightTrigger,
             _ => return None,
         })
     }
-}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
-pub enum Joystick {
-    /// Left joystick, usually used for movement
-    Left = 0,
+    pub const fn is_joystick(self) -> bool {
+        matches!(self, Self::LeftStick | Self::RightStick)
+    }
 
-    /// Right joystick, usually used for camera rotation.
-    Right = 1,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
-pub enum Trigger {
-    /// Left Analog Trigger
-    Left = 0,
-
-    /// Right Analog Trigger
-    Right = 1,
+    pub const fn is_trigger(self) -> bool {
+        matches!(self, Self::LeftTrigger | Self::RightTrigger)
+    }
 }
 
 /// A change to the state of a button, trigger, or joystick on a gamepad.
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum GamepadUpdate {
-    /// Buttons are simple, they are either on or off.
-    Button {
-        /// The button whose state changed.
-        button: GamepadButton,
-
-        /// Whether the button is pressed or released.
-        pressed: bool,
-    },
-
-    /// Triggers are analog, so they have their own variant.
-    Trigger {
-        /// Left or Right trigger.
-        trigger: Trigger,
-
-        /// Activation value in the range [0.0,1.0]
-        value: f32,
-    },
-
-    /// Joysticks have an X and a Y axis activation.
-    Joystick {
-        /// Left or right stick.
-        joystick: Joystick,
-
-        /// X axis activation value in the range [-1.0,1.0]
-        x: f32,
-
-        /// Y axis activation value in the range [-1.0,1.0]
-        y: f32,
-    },
+pub struct GamepadUpdate {
+    pub button: GamepadButton,
+    pub values: [f32; 2],
 }
 
 /// This is used to tell the OS what kind of controller is connected.
@@ -174,7 +144,6 @@ pub enum GamepadUpdate {
 /// the device.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum GamepadType {
     Xbox360 = 0,
     DualShock4 = 1,
