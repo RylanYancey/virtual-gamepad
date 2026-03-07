@@ -80,6 +80,8 @@ const RIGHT_STICK_X: ParamType = 0x03; // ABS_RX
 const RIGHT_STICK_Y: ParamType = 0x04; // ABS_RY
 const ANALOG_TRIGGER_LEFT: ParamType = 0x02; // ABS_Z
 const ANALOG_TRIGGER_RIGHT: ParamType = 0x05; // ABS_RZ
+const DPAD_X: ParamType = 0x10; // ABS_HAT0X
+const DPAD_Y: ParamType = 0x11; // ABS_HAT0Y
 
 pub(super) struct RawGamepad {
     file: File,
@@ -106,9 +108,6 @@ impl RawGamepad {
                 BTN_WEST,
                 BTN_EAST,
                 BTN_DPAD_UP,
-                BTN_DPAD_DOWN,
-                BTN_DPAD_LEFT,
-                BTN_DPAD_RIGHT,
                 BTN_SELECT,
                 BTN_START,
                 BTN_MODE,
@@ -125,8 +124,15 @@ impl RawGamepad {
 
         // Configure supported Absolute Axes and analog triggers.
         unsafe {
-            // Sticks
-            let absbits = &[LEFT_STICK_X, LEFT_STICK_Y, RIGHT_STICK_X, RIGHT_STICK_Y];
+            // Sticks and D-Pads
+            let absbits = &[
+                LEFT_STICK_X,
+                LEFT_STICK_Y,
+                RIGHT_STICK_X,
+                RIGHT_STICK_Y,
+                DPAD_X,
+                DPAD_Y,
+            ];
             for absbit in absbits {
                 ui_set_absbit(fd, *absbit)?;
                 let abs_setup = libc::uinput_abs_setup {
@@ -191,10 +197,11 @@ impl RawGamepad {
 
     pub fn update(&mut self, button: GamepadButton, values: [f32; 2]) {
         match button {
-            _ if button.is_joystick() => {
+            _ if button.is_axis() => {
                 let (x_code, y_code) = match button {
                     GamepadButton::LeftStick => (LEFT_STICK_X, LEFT_STICK_Y),
                     GamepadButton::RightStick => (RIGHT_STICK_X, RIGHT_STICK_Y),
+                    GamepadButton::DPad => (DPAD_X, DPAD_Y),
                     _ => unreachable!(),
                 };
                 emit(
@@ -230,10 +237,6 @@ impl RawGamepad {
                     GamepadButton::North => BTN_NORTH,
                     GamepadButton::East => BTN_EAST,
                     GamepadButton::West => BTN_WEST,
-                    GamepadButton::DPadUp => BTN_DPAD_UP,
-                    GamepadButton::DPadDown => BTN_DPAD_DOWN,
-                    GamepadButton::DPadLeft => BTN_DPAD_LEFT,
-                    GamepadButton::DPadRight => BTN_DPAD_RIGHT,
                     GamepadButton::LeftBumper => BTN_TRIGGER_LEFT,
                     GamepadButton::RightBumper => BTN_TRIGGER_RIGHT,
                     GamepadButton::LeftThumb => BTN_THUMBL,

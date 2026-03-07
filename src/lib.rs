@@ -48,52 +48,43 @@ pub enum GamepadButton {
     /// DualShock4: Square
     West = 3,
 
-    /// Directional Pad Up
-    DPadUp = 4,
-
-    /// Directional Pad Down
-    DPadDown = 5,
-
-    /// Directional Pad Left
-    DPadLeft = 6,
-
-    /// Directional Pad Right
-    DPadRight = 7,
+    /// Directional Pad X/Y
+    DPad = 4,
 
     /// Left stick click
-    LeftThumb = 8,
+    LeftThumb = 5,
 
     /// Right stick click
-    RightThumb = 9,
+    RightThumb = 6,
 
     /// Menu button on the right
     /// Nintendo Switch: Plus
-    Start = 10,
+    Start = 7,
 
     /// Menu button on the left.
     /// Nintendo Switch: Minus
-    Select = 11,
+    Select = 8,
 
     /// Branded button, such as the big X in the middle of the Xbox360 Controller.
-    Mode = 12,
+    Mode = 9,
 
     /// Right bumper, not analog.
-    RightBumper = 13,
+    RightBumper = 10,
 
     /// Left bumper, not analog.
-    LeftBumper = 14,
+    LeftBumper = 11,
 
     /// Left Joystick X/Y
-    LeftStick = 15,
+    LeftStick = 12,
 
     /// Right Joystick X/Y
-    RightStick = 16,
+    RightStick = 13,
 
     /// Left analog trigger.
-    LeftTrigger = 17,
+    LeftTrigger = 14,
 
     /// Right analog trigger.
-    RightTrigger = 18,
+    RightTrigger = 15,
 }
 
 impl GamepadButton {
@@ -103,27 +94,24 @@ impl GamepadButton {
             1 => Self::South,
             2 => Self::East,
             3 => Self::West,
-            4 => Self::DPadUp,
-            5 => Self::DPadDown,
-            6 => Self::DPadLeft,
-            7 => Self::DPadRight,
-            8 => Self::LeftThumb,
-            9 => Self::RightThumb,
-            10 => Self::Start,
-            11 => Self::Select,
-            12 => Self::Mode,
-            13 => Self::RightBumper,
-            14 => Self::LeftBumper,
-            15 => Self::LeftStick,
-            16 => Self::RightStick,
-            17 => Self::LeftTrigger,
-            18 => Self::RightTrigger,
+            4 => Self::DPad,
+            5 => Self::LeftThumb,
+            6 => Self::RightThumb,
+            7 => Self::Start,
+            8 => Self::Select,
+            9 => Self::Mode,
+            10 => Self::RightBumper,
+            11 => Self::LeftBumper,
+            12 => Self::LeftStick,
+            13 => Self::RightStick,
+            14 => Self::LeftTrigger,
+            15 => Self::RightTrigger,
             _ => return None,
         })
     }
 
-    pub const fn is_joystick(self) -> bool {
-        matches!(self, Self::LeftStick | Self::RightStick)
+    pub const fn is_axis(self) -> bool {
+        matches!(self, Self::LeftStick | Self::RightStick | Self::DPad)
     }
 
     pub const fn is_trigger(self) -> bool {
