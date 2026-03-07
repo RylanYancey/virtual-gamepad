@@ -139,6 +139,31 @@ pub struct GamepadUpdate {
     pub values: [f32; 2],
 }
 
+impl GamepadUpdate {
+    pub fn to_bytes(&self) -> [u8; 5] {
+        let btn = self.button as u8;
+        let [v00, v01] = quantize(self.values[0]).to_le_bytes();
+        let [v10, v11] = quantize(self.values[1]).to_le_bytes();
+        [btn, v00, v01, v10, v11]
+    }
+
+    pub fn from_bytes(&self, bytes: &[u8]) -> Option<Self> {
+        // Convert to array of 5 bytes.
+        let [btn, v00, v01, v10, v11] = bytes.try_into().ok()?;
+        // Byte 0 encodes button type
+        let button = GamepadButton::from_u8(btn)?;
+        Some(Self {
+            button,
+            values: [
+                // bytes 1 and 2 encode the X axis (or pressure vaule)
+                dequantize(i16::from_le_bytes([v00, v01])).clamp(-1.0, 1.0),
+                // bytes 3 and 4 encode the Y axis (or ignored)
+                dequantize(i16::from_le_bytes([v10, v11])).clamp(-1.0, 1.0),
+            ],
+        })
+    }
+}
+
 /// This is used to tell the OS what kind of controller is connected.
 /// If we didn't specify this correctly, most games wouldn't detect
 /// the device.
@@ -177,12 +202,12 @@ pub struct GamepadInfo {
     pub product_id: u16,
 }
 
-/// Convert an f32 in the range [-1.0,1.0] to an i32 in the range [-32767,32768]
-pub fn quantize(v: f32) -> i32 {
-    (v * 32767.0) as i32
+/// Convert an f32 in the range [-1.0,1.0] to an i16 in the range [-32767,32768]
+pub fn quantize(v: f32) -> i16 {
+    (v * 32767.0) as i16
 }
 
-/// Convert an i32 in the range [-32767,32768] to an f32 in the range [-1.0,1.0]
-pub fn dequantize(v: i32) -> f32 {
+/// Convert an i16 in the range [-32767,32768] to an f32 in the range [-1.0,1.0]
+pub fn dequantize(v: i16) -> f32 {
     v as f32 / 32767.0
 }

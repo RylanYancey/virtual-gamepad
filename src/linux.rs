@@ -205,13 +205,13 @@ impl RawGamepad {
                     &mut self.file,
                     EV_ABS as u16,
                     x_code as u16,
-                    crate::quantize(values[0]),
+                    crate::quantize(values[0]) as i32,
                 );
                 emit(
                     &mut self.file,
                     EV_ABS as u16,
                     y_code as u16,
-                    crate::quantize(values[1]),
+                    crate::quantize(values[1]) as i32,
                 );
             }
             _ if button.is_trigger() => {
@@ -225,7 +225,7 @@ impl RawGamepad {
                     &mut self.file,
                     EV_ABS as u16,
                     code as u16,
-                    crate::quantize(values[0]),
+                    crate::quantize(values[0]) as i32,
                 );
             }
             _ => {
