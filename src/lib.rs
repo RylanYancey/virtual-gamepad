@@ -147,7 +147,7 @@ impl GamepadUpdate {
         [btn, v00, v01, v10, v11]
     }
 
-    pub fn from_bytes(&self, bytes: &[u8]) -> Option<Self> {
+    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         // Convert to array of 5 bytes.
         let [btn, v00, v01, v10, v11] = bytes.try_into().ok()?;
         // Byte 0 encodes button type
