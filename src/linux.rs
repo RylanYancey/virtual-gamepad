@@ -60,10 +60,6 @@ const BTN_SOUTH: ParamType = 0x130;
 const BTN_NORTH: ParamType = 0x133;
 const BTN_WEST: ParamType = 0x134;
 const BTN_EAST: ParamType = 0x131;
-const BTN_DPAD_UP: ParamType = 0x220;
-const BTN_DPAD_DOWN: ParamType = 0x221;
-const BTN_DPAD_LEFT: ParamType = 0x222;
-const BTN_DPAD_RIGHT: ParamType = 0x223;
 const BTN_SELECT: ParamType = 0x13a;
 const BTN_START: ParamType = 0x13b;
 const BTN_MODE: ParamType = 0x13c;
@@ -108,7 +104,6 @@ impl RawGamepad {
                 BTN_NORTH,
                 BTN_WEST,
                 BTN_EAST,
-                BTN_DPAD_UP,
                 BTN_SELECT,
                 BTN_START,
                 BTN_MODE,
