@@ -8,11 +8,9 @@ default = []
 serde = ["dep:serde"]
 
 [dependencies]
+bitflags = "2.11.1"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2.182"
 nix = { version = "0.31.2", features = ["ioctl", "fs"] }
-
-[dev-dependencies]
-getrandom = "0.4.1"

@@ -7,7 +7,7 @@ use std::mem::zeroed;
 use std::os::fd::AsRawFd;
 use std::time::Duration;
 
-use crate::GamepadButton;
+use crate::state::{Buttons, GamepadState};
 
 const UINPUT_PATH: &str = "/dev/uinput";
 
@@ -78,13 +78,14 @@ const LEFT_STICK_X: ParamType = 0x00; // ABS_X
 const LEFT_STICK_Y: ParamType = 0x01; // ABS_Y
 const RIGHT_STICK_X: ParamType = 0x03; // ABS_RX
 const RIGHT_STICK_Y: ParamType = 0x04; // ABS_RY
-const ANALOG_TRIGGER_LEFT: ParamType = 0x02; // ABS_Z
-const ANALOG_TRIGGER_RIGHT: ParamType = 0x05; // ABS_RZ
+const TRIGGER_LEFT: ParamType = 0x02; // ABS_Z
+const TRIGGER_RIGHT: ParamType = 0x05; // ABS_RZ
 const DPAD_X: ParamType = 0x10; // ABS_HAT0X
 const DPAD_Y: ParamType = 0x11; // ABS_HAT0Y
 
 pub(super) struct RawGamepad {
     file: File,
+    prev: GamepadState,
 }
 
 impl RawGamepad {
@@ -124,15 +125,8 @@ impl RawGamepad {
 
         // Configure supported Absolute Axes and analog triggers.
         unsafe {
-            // Sticks and D-Pads
-            let absbits = &[
-                LEFT_STICK_X,
-                LEFT_STICK_Y,
-                RIGHT_STICK_X,
-                RIGHT_STICK_Y,
-                DPAD_X,
-                DPAD_Y,
-            ];
+            // Sticks (i16 axes)
+            let absbits = &[LEFT_STICK_X, LEFT_STICK_Y, RIGHT_STICK_X, RIGHT_STICK_Y];
             for absbit in absbits {
                 ui_set_absbit(fd, *absbit)?;
                 let abs_setup = libc::uinput_abs_setup {
@@ -149,15 +143,33 @@ impl RawGamepad {
                 ui_abs_setup(fd, &abs_setup)?;
             }
 
-            // Analog triggers
-            let triggerbits = &[ANALOG_TRIGGER_LEFT, ANALOG_TRIGGER_RIGHT];
+            // DPads (analog i8)
+            let dpadbits = &[DPAD_X, DPAD_Y];
+            for absbit in dpadbits {
+                ui_set_absbit(fd, *absbit)?;
+                let abs_setup = libc::uinput_abs_setup {
+                    code: *absbit as u16,
+                    absinfo: libc::input_absinfo {
+                        minimum: -128,
+                        maximum: 127,
+                        flat: 0,
+                        fuzz: 0,
+                        resolution: 0,
+                        value: 0,
+                    },
+                };
+                ui_abs_setup(fd, &abs_setup)?;
+            }
+
+            // Analog triggers (analog u8)
+            let triggerbits = &[TRIGGER_LEFT, TRIGGER_RIGHT];
             for triggerbit in triggerbits {
                 ui_set_absbit(fd, *triggerbit)?;
                 let abs_setup = libc::uinput_abs_setup {
                     code: *triggerbit as u16,
                     absinfo: libc::input_absinfo {
                         minimum: 0,
-                        maximum: 32767,
+                        maximum: 255,
                         flat: 0,
                         fuzz: 0,
                         resolution: 0,
@@ -192,68 +204,62 @@ impl RawGamepad {
         // This is needed because the OS will not wait for device creation to complete.
         std::thread::sleep(Duration::from_millis(500));
 
-        Ok(Self { file })
+        Ok(Self {
+            file,
+            prev: GamepadState::default(),
+        })
     }
 
-    pub fn update(&mut self, button: GamepadButton, values: [f32; 2]) {
-        match button {
-            _ if button.is_axis() => {
-                let (x_code, y_code) = match button {
-                    GamepadButton::LeftStick => (LEFT_STICK_X, LEFT_STICK_Y),
-                    GamepadButton::RightStick => (RIGHT_STICK_X, RIGHT_STICK_Y),
-                    GamepadButton::DPad => (DPAD_X, DPAD_Y),
-                    _ => unreachable!(),
-                };
-                emit(
-                    &mut self.file,
-                    EV_ABS as u16,
-                    x_code as u16,
-                    crate::quantize(values[0]) as i32,
-                );
-                emit(
-                    &mut self.file,
-                    EV_ABS as u16,
-                    y_code as u16,
-                    crate::quantize(values[1]) as i32,
-                );
-            }
-            _ if button.is_trigger() => {
-                let code = match button {
-                    GamepadButton::LeftTrigger => ANALOG_TRIGGER_LEFT,
-                    GamepadButton::RightTrigger => ANALOG_TRIGGER_RIGHT,
-                    _ => unreachable!(),
-                };
+    fn emit_if<I: Into<i32>>(&mut self, prev: I, new: I, ev: u64) {
+        let (prev, new) = (prev.into(), new.into());
+        if prev != new {
+            emit(&mut self.file, EV_ABS as u16, ev as u16, new);
+        }
+    }
 
-                emit(
-                    &mut self.file,
-                    EV_ABS as u16,
-                    code as u16,
-                    crate::quantize(values[0]) as i32,
-                );
-            }
-            _ => {
-                let code = match button {
-                    GamepadButton::South => BTN_SOUTH,
-                    GamepadButton::North => BTN_NORTH,
-                    GamepadButton::East => BTN_EAST,
-                    GamepadButton::West => BTN_WEST,
-                    GamepadButton::LeftBumper => BTN_TRIGGER_LEFT,
-                    GamepadButton::RightBumper => BTN_TRIGGER_RIGHT,
-                    GamepadButton::LeftThumb => BTN_THUMBL,
-                    GamepadButton::RightThumb => BTN_THUMBR,
-                    GamepadButton::Start => BTN_START,
-                    GamepadButton::Select => BTN_SELECT,
-                    GamepadButton::Mode => BTN_MODE,
-                    _ => unreachable!(),
-                };
-                emit(
-                    &mut self.file,
-                    EV_KEY as u16,
-                    code as u16,
-                    (values[0] > 0.5) as i32,
-                );
-            }
-        };
+    pub fn update(&mut self, state: GamepadState) {
+        let just_pressed = state.buttons.just_pressed(self.prev.buttons);
+        let just_released = state.buttons.just_released(self.prev.buttons);
+        let changed = just_pressed | just_released;
+
+        // write simple button changes.
+        for button in changed.iter() {
+            let code = match button {
+                Buttons::SOUTH => BTN_SOUTH,
+                Buttons::NORTH => BTN_NORTH,
+                Buttons::EAST => BTN_EAST,
+                Buttons::WEST => BTN_WEST,
+                Buttons::BUMPER_LEFT => BTN_TRIGGER_LEFT,
+                Buttons::BUMPER_RIGHT => BTN_TRIGGER_RIGHT,
+                Buttons::THUMB_LEFT => BTN_THUMBL,
+                Buttons::THUMB_RIGHT => BTN_THUMBR,
+                Buttons::START => BTN_START,
+                Buttons::SELECT => BTN_SELECT,
+                Buttons::MODE => BTN_MODE,
+                _ => continue,
+            };
+
+            emit(
+                &mut self.file,
+                EV_KEY as u16,
+                code as u16,
+                // if not just pressed (1), then it was just released. (0)
+                just_pressed.contains(button) as i32,
+            );
+        }
+
+        // Write analog axis updates
+        let prev = self.prev;
+        self.emit_if(state.dpad_x, prev.dpad_x, DPAD_X);
+        self.emit_if(state.dpad_y, prev.dpad_y, DPAD_Y);
+        self.emit_if(state.trigger_left, prev.trigger_left, TRIGGER_LEFT);
+        self.emit_if(state.trigger_right, prev.trigger_right, TRIGGER_RIGHT);
+        self.emit_if(state.stick_left_x, prev.stick_left_x, LEFT_STICK_X);
+        self.emit_if(state.stick_left_y, prev.stick_left_y, LEFT_STICK_Y);
+        self.emit_if(state.stick_right_x, prev.stick_right_x, RIGHT_STICK_X);
+        self.emit_if(state.stick_right_y, prev.stick_right_y, RIGHT_STICK_Y);
+
+        // Inform linux of available events for this device.
         emit(&mut self.file, EV_SYN as u16, 0, 0);
     }
 }
