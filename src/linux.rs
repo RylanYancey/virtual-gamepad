@@ -258,6 +258,13 @@ impl RawGamepad {
     }
 
     pub fn update(&mut self, state: GamepadState) {
+        // early return if the state is not actually changed.
+        if self.prev == state {
+            self.prev = state;
+            return;
+        }
+
+        // compute button changes
         let just_pressed = state.buttons.just_pressed(self.prev.buttons);
         let just_released = state.buttons.just_released(self.prev.buttons);
         let changed = just_pressed | just_released;
@@ -301,6 +308,9 @@ impl RawGamepad {
 
         // Inform linux of available events for this device.
         emit(&mut self.file, EV_SYN as u16, 0, 0);
+
+        // update state
+        self.prev = state;
     }
 
     #[cfg(feature = "rumble")]
